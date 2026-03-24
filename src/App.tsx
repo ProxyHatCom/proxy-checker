@@ -20,7 +20,6 @@ const DEFAULT_SETTINGS: Settings = {
   defaultThreads: 10,
   connectionTimeout: 5,
   requestTimeout: 10,
-  maxDownloadKb: 95,
 };
 
 function App() {
@@ -41,7 +40,6 @@ function App() {
       parsed.defaultThreads = Math.min(50, Math.max(1, parsed.defaultThreads || 10));
       parsed.connectionTimeout = Math.min(60, Math.max(1, parsed.connectionTimeout || 5));
       parsed.requestTimeout = Math.min(60, Math.max(1, parsed.requestTimeout || 10));
-      parsed.maxDownloadKb = Math.min(1024, Math.max(10, parsed.maxDownloadKb || 95));
       return parsed;
     } catch {
       return DEFAULT_SETTINGS;
@@ -120,7 +118,6 @@ function App() {
       max_threads: threads,
       connection_timeout_secs: settings.connectionTimeout,
       request_timeout_secs: settings.requestTimeout,
-      max_download_bytes: settings.maxDownloadKb * 1024,
       check_endpoint_url: 'https://checker-api.proxyhat.com/check',
     };
 

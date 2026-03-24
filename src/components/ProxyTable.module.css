@@ -43,7 +43,7 @@
 }
 
 .thType { width: 7.5%; }
-.thHost { width: 20%; }
+.thHost { width: 19%; }
 .thPort { width: 5.5%; }
 .thUser { width: 14%; cursor: default !important; }
 .thPass { width: 14%; cursor: default !important; }
@@ -52,7 +52,7 @@
 .thSpeed { width: 8%; text-align: right; }
 .thGeo { width: 8%; }
 .thAnon { width: 6%; text-align: center; }
-.thActions { width: 3%; }
+.thActions { width: 5%; }
 
 .thUser:hover, .thPass:hover {
   background: var(--bg-table-header) !important;
@@ -188,6 +188,32 @@
 .anonElite { color: var(--accent-green); font-weight: 600; font-size: 11px; }
 .anonAnon { color: var(--accent-yellow); font-weight: 600; font-size: 11px; }
 .anonTransparent { color: var(--accent-red); font-weight: 600; font-size: 11px; }
+
+/* Actions cell */
+.actionsCell {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  justify-content: center;
+}
+
+/* Copy button */
+.copyBtn {
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  color: var(--text-muted);
+  padding: 0;
+  border-radius: 4px;
+}
+
+.copyBtn:hover {
+  background: var(--accent-blue);
+  color: white;
+}
 
 /* Remove button */
 .removeBtn {

@@ -118,13 +118,11 @@ fn determine_anonymity(headers: &std::collections::HashMap<String, String>) -> A
 async fn check_destination(
     client: &reqwest::Client,
     url: &str,
-    max_bytes: usize,
     headers: &reqwest::header::HeaderMap,
     timeout_secs: u64,
-) -> Result<(u64, f64), String> {
+) -> Result<u64, String> {
     let fut = async {
         let start = Instant::now();
-
         let resp = client
             .get(url)
             .headers(headers.clone())
@@ -132,40 +130,57 @@ async fn check_destination(
             .await
             .map_err(|e| e.to_string())?;
 
-        let status = resp.status();
-        if !status.is_success() {
-            return Err(format!("Destination returned HTTP {}", status.as_u16()));
+        if !resp.status().is_success() {
+            return Err(format!("Destination returned HTTP {}", resp.status().as_u16()));
         }
 
-        let latency = start.elapsed().as_millis() as u64;
-
-        // Stream body with size cap instead of downloading everything
-        let download_start = Instant::now();
-        let mut total_bytes: usize = 0;
-        let mut stream = resp;
-
-        // Read chunks up to max_bytes
-        while total_bytes < max_bytes {
-            let chunk = stream.chunk().await.map_err(|e| e.to_string())?;
-            match chunk {
-                Some(data) => total_bytes += data.len(),
-                None => break,
-            }
-        }
-
-        let download_duration = download_start.elapsed().as_secs_f64();
-        let speed_mbps = if download_duration > 0.001 {
-            (total_bytes.min(max_bytes) as f64 / 1_000_000.0) / download_duration
-        } else {
-            0.0
-        };
-
-        Ok((latency, speed_mbps))
+        Ok(start.elapsed().as_millis() as u64)
     };
 
     tokio::time::timeout(Duration::from_secs(timeout_secs), fut)
         .await
         .map_err(|_| "Destination check timed out".to_string())?
+}
+
+async fn check_speed(
+    client: &reqwest::Client,
+    speedtest_url: &str,
+    headers: &reqwest::header::HeaderMap,
+    timeout_secs: u64,
+) -> Result<f64, String> {
+    let fut = async {
+        let resp = client
+            .get(speedtest_url)
+            .headers(headers.clone())
+            .send()
+            .await
+            .map_err(|e| e.to_string())?;
+
+        if !resp.status().is_success() {
+            return Err(format!("Speed test HTTP {}", resp.status().as_u16()));
+        }
+
+        let start = Instant::now();
+        let mut total_bytes: usize = 0;
+        let mut stream = resp;
+        loop {
+            match stream.chunk().await.map_err(|e| e.to_string())? {
+                Some(data) => total_bytes += data.len(),
+                None => break,
+            }
+        }
+
+        let duration = start.elapsed().as_secs_f64();
+        if duration > 0.001 {
+            Ok((total_bytes as f64 / 1_000_000.0) / duration)
+        } else {
+            Ok(0.0)
+        }
+    };
+
+    tokio::time::timeout(Duration::from_secs(timeout_secs), fut)
+        .await
+        .map_err(|_| "Speed test timed out".to_string())?
 }
 
 pub async fn check_single_proxy(
@@ -253,14 +268,33 @@ pub async fn check_single_proxy(
         }
     }
 
-    // Step 2: Check destination URL
-    match check_destination(&client, &config.destination_url, config.max_download_bytes, &headers, config.request_timeout_secs).await {
-        Ok((latency, speed)) => {
+    // Derive speedtest URL from check endpoint
+    let speedtest_url = config.check_endpoint_url.as_ref().map(|url| {
+        if let Some(base) = url.strip_suffix("/check") {
+            format!("{}/speedtest", base)
+        } else {
+            format!("{}/speedtest", url.trim_end_matches('/'))
+        }
+    });
+
+    // Step 2: Check destination (latency) and speed test concurrently
+    let dest_fut = check_destination(&client, &config.destination_url, &headers, config.request_timeout_secs);
+    let speed_fut = async {
+        match speedtest_url {
+            Some(ref url) => check_speed(&client, url, &headers, config.request_timeout_secs).await.ok(),
+            None => None,
+        }
+    };
+
+    let (dest_result, speed_mbps) = tokio::join!(dest_fut, speed_fut);
+
+    match dest_result {
+        Ok(latency) => {
             ProxyResult {
                 id: entry.id.clone(),
                 status: ProxyStatus::Alive,
                 latency_ms: Some(latency),
-                download_speed_mbps: Some(speed),
+                download_speed_mbps: speed_mbps,
                 real_ip,
                 country,
                 city,
@@ -270,7 +304,6 @@ pub async fn check_single_proxy(
             }
         },
         Err(e) => {
-            // If endpoint worked but destination failed
             let status = if real_ip.is_some() {
                 ProxyStatus::DestinationUnreachable
             } else {

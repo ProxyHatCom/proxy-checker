@@ -63,7 +63,6 @@ pub struct CheckConfig {
     pub max_threads: usize,
     pub connection_timeout_secs: u64,
     pub request_timeout_secs: u64,
-    pub max_download_bytes: usize,
     pub check_endpoint_url: Option<String>,
 }
 
@@ -74,7 +73,6 @@ impl Default for CheckConfig {
             max_threads: 10,
             connection_timeout_secs: 5,
             request_timeout_secs: 10,
-            max_download_bytes: 95 * 1024,
             check_endpoint_url: None,
         }
     }

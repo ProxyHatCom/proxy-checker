@@ -29,7 +29,6 @@ export interface CheckConfig {
   max_threads: number;
   connection_timeout_secs: number;
   request_timeout_secs: number;
-  max_download_bytes: number;
   check_endpoint_url: string | null;
 }
 

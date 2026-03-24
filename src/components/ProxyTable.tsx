@@ -190,7 +190,18 @@ export function ProxyTable({ proxies, onUpdate, onRemove }: ProxyTableProps) {
                   {p.result?.country ? `${p.result.country}` : '--'}
                 </td>
                 <td className={styles.anonCell}><AnonymityBadge level={p.result?.anonymity} /></td>
-                <td>
+                <td className={styles.actionsCell}>
+                  <button
+                    className={styles.copyBtn}
+                    onClick={e => {
+                      e.stopPropagation();
+                      const auth = p.username && p.password ? `${p.username}:${p.password}@` : '';
+                      navigator.clipboard.writeText(`${p.proxy_type}://${auth}${p.host}:${p.port}`);
+                    }}
+                    title="Copy proxy"
+                  >
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+                  </button>
                   <button
                     className={styles.removeBtn}
                     onClick={e => { e.stopPropagation(); onRemove(p.id); }}

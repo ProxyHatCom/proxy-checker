@@ -7,7 +7,6 @@ interface Settings {
   defaultThreads: number;
   connectionTimeout: number;
   requestTimeout: number;
-  maxDownloadKb: number;
 }
 
 interface SettingsModalProps {
@@ -82,16 +81,6 @@ export function SettingsModal({ isOpen, onClose, settings, onSave }: SettingsMod
                 onChange={e => handleChange('requestTimeout', Math.min(60, Math.max(1, parseInt(e.target.value) || 10)))}
               />
             </div>
-          </div>
-          <div className={settingsStyles.group}>
-            <label>Max Download Size (KB)</label>
-            <input
-              type="number"
-              min={10}
-              max={1024}
-              value={settings.maxDownloadKb}
-              onChange={e => handleChange('maxDownloadKb', Math.min(1024, Math.max(10, parseInt(e.target.value) || 95)))}
-            />
           </div>
         </div>
         <div className={styles.footer}>
