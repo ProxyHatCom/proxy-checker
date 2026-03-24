@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { FilterState, defaultFilters } from '../utils/filters';
 import styles from './ActionBar.module.css';
 
@@ -22,6 +22,21 @@ export function ActionBar({
   const [showExport, setShowExport] = useState(false);
   const filterRef = useRef<HTMLDivElement>(null);
   const exportRef = useRef<HTMLDivElement>(null);
+
+  // Close dropdowns on click outside
+  useEffect(() => {
+    if (!showFilter && !showExport) return;
+    const handleClick = (e: MouseEvent) => {
+      if (showFilter && filterRef.current && !filterRef.current.contains(e.target as Node)) {
+        setShowFilter(false);
+      }
+      if (showExport && exportRef.current && !exportRef.current.contains(e.target as Node)) {
+        setShowExport(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, [showFilter, showExport]);
 
   const hasActiveFilters = JSON.stringify(filters) !== JSON.stringify(defaultFilters);
 

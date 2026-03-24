@@ -8,6 +8,10 @@ interface ParsedProxy {
   password: string | null;
 }
 
+function isValidPort(port: number): boolean {
+  return Number.isInteger(port) && port >= 1 && port <= 65535;
+}
+
 export function parseProxyList(text: string): ParsedProxy[] {
   const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
   const results: ParsedProxy[] = [];
@@ -30,6 +34,9 @@ function parseSingleProxy(line: string): ParsedProxy | null {
     /^(https?|socks5h?):\/\/(?:([^:@]+):([^@]+)@)?([^:\/]+):(\d+)\/?$/i
   );
   if (uriMatch) {
+    const port = parseInt(uriMatch[5], 10);
+    if (!isValidPort(port)) return null;
+
     const scheme = uriMatch[1].toLowerCase();
     let proxyType: ProxyType = 'http';
     if (scheme === 'socks5') proxyType = 'socks5';
@@ -38,7 +45,7 @@ function parseSingleProxy(line: string): ParsedProxy | null {
     return {
       proxy_type: proxyType,
       host: uriMatch[4],
-      port: parseInt(uriMatch[5], 10),
+      port,
       username: uriMatch[2] || null,
       password: uriMatch[3] || null,
     };
@@ -47,10 +54,13 @@ function parseSingleProxy(line: string): ParsedProxy | null {
   // Try user:pass@host:port
   const authAtMatch = cleanLine.match(/^([^:@]+):([^@]+)@([^:]+):(\d+)$/);
   if (authAtMatch) {
+    const port = parseInt(authAtMatch[4], 10);
+    if (!isValidPort(port)) return null;
+
     return {
       proxy_type: 'http',
       host: authAtMatch[3],
-      port: parseInt(authAtMatch[4], 10),
+      port,
       username: authAtMatch[1],
       password: authAtMatch[2],
     };
@@ -60,7 +70,7 @@ function parseSingleProxy(line: string): ParsedProxy | null {
   const parts = cleanLine.split(':');
   if (parts.length === 4) {
     const port = parseInt(parts[1], 10);
-    if (!isNaN(port)) {
+    if (isValidPort(port)) {
       return {
         proxy_type: 'http',
         host: parts[0],
@@ -74,7 +84,7 @@ function parseSingleProxy(line: string): ParsedProxy | null {
   // Try host:port
   if (parts.length === 2) {
     const port = parseInt(parts[1], 10);
-    if (!isNaN(port)) {
+    if (isValidPort(port)) {
       return {
         proxy_type: 'http',
         host: parts[0],

@@ -88,30 +88,30 @@ export function ProxyTable({ proxies, onUpdate, onRemove }: ProxyTableProps) {
       <table className={styles.table}>
         <thead>
           <tr>
-            <th className={styles.thType} onClick={() => handleSort('type')}>
+            <th className={styles.thType} onClick={() => handleSort('type')} role="button" aria-label="Sort by type">
               Type <SortIcon active={sortKey === 'type'} dir={sortDir} />
             </th>
-            <th className={styles.thHost} onClick={() => handleSort('host')}>
+            <th className={styles.thHost} onClick={() => handleSort('host')} role="button" aria-label="Sort by host">
               Host <SortIcon active={sortKey === 'host'} dir={sortDir} />
             </th>
-            <th className={styles.thPort} onClick={() => handleSort('port')}>
+            <th className={styles.thPort} onClick={() => handleSort('port')} role="button" aria-label="Sort by port">
               Port <SortIcon active={sortKey === 'port'} dir={sortDir} />
             </th>
             <th className={styles.thUser}>Username</th>
             <th className={styles.thPass}>Password</th>
-            <th className={styles.thStatus} onClick={() => handleSort('status')}>
+            <th className={styles.thStatus} onClick={() => handleSort('status')} role="button" aria-label="Sort by status">
               Status <SortIcon active={sortKey === 'status'} dir={sortDir} />
             </th>
-            <th className={styles.thLat} onClick={() => handleSort('latency')}>
+            <th className={styles.thLat} onClick={() => handleSort('latency')} role="button" aria-label="Sort by latency">
               Latency <SortIcon active={sortKey === 'latency'} dir={sortDir} />
             </th>
-            <th className={styles.thSpeed} onClick={() => handleSort('speed')}>
+            <th className={styles.thSpeed} onClick={() => handleSort('speed')} role="button" aria-label="Sort by speed">
               Speed <SortIcon active={sortKey === 'speed'} dir={sortDir} />
             </th>
-            <th className={styles.thGeo} onClick={() => handleSort('country')}>
+            <th className={styles.thGeo} onClick={() => handleSort('country')} role="button" aria-label="Sort by country">
               Country <SortIcon active={sortKey === 'country'} dir={sortDir} />
             </th>
-            <th className={styles.thAnon} onClick={() => handleSort('anonymity')}>
+            <th className={styles.thAnon} onClick={() => handleSort('anonymity')} role="button" aria-label="Sort by anonymity">
               Anon <SortIcon active={sortKey === 'anonymity'} dir={sortDir} />
             </th>
             <th className={styles.thActions}></th>
@@ -151,9 +151,14 @@ export function ProxyTable({ proxies, onUpdate, onRemove }: ProxyTableProps) {
                     className={styles.cellInputSmall}
                     type="number"
                     value={p.port || ''}
-                    onChange={e => onUpdate(p.id, { port: parseInt(e.target.value) || 0 })}
+                    onChange={e => {
+                      const v = parseInt(e.target.value) || 0;
+                      if (v >= 0 && v <= 65535) onUpdate(p.id, { port: v });
+                    }}
                     onClick={e => e.stopPropagation()}
                     placeholder="port"
+                    min={0}
+                    max={65535}
                   />
                 </td>
                 <td>

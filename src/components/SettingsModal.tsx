@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import styles from './BulkPasteModal.module.css';
 import settingsStyles from './SettingsModal.module.css';
 
@@ -17,6 +18,15 @@ interface SettingsModalProps {
 }
 
 export function SettingsModal({ isOpen, onClose, settings, onSave }: SettingsModalProps) {
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleEsc = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', handleEsc);
+    return () => window.removeEventListener('keydown', handleEsc);
+  }, [isOpen, onClose]);
+
   if (!isOpen) return null;
 
   const handleChange = (key: keyof Settings, value: string | number) => {
@@ -48,7 +58,7 @@ export function SettingsModal({ isOpen, onClose, settings, onSave }: SettingsMod
               min={1}
               max={50}
               value={settings.defaultThreads}
-              onChange={e => handleChange('defaultThreads', parseInt(e.target.value) || 10)}
+              onChange={e => handleChange('defaultThreads', Math.min(50, Math.max(1, parseInt(e.target.value) || 10)))}
             />
           </div>
           <div className={settingsStyles.row}>
@@ -59,7 +69,7 @@ export function SettingsModal({ isOpen, onClose, settings, onSave }: SettingsMod
                 min={1}
                 max={60}
                 value={settings.connectionTimeout}
-                onChange={e => handleChange('connectionTimeout', parseInt(e.target.value) || 5)}
+                onChange={e => handleChange('connectionTimeout', Math.min(60, Math.max(1, parseInt(e.target.value) || 5)))}
               />
             </div>
             <div className={settingsStyles.group}>
@@ -69,7 +79,7 @@ export function SettingsModal({ isOpen, onClose, settings, onSave }: SettingsMod
                 min={1}
                 max={60}
                 value={settings.requestTimeout}
-                onChange={e => handleChange('requestTimeout', parseInt(e.target.value) || 10)}
+                onChange={e => handleChange('requestTimeout', Math.min(60, Math.max(1, parseInt(e.target.value) || 10)))}
               />
             </div>
           </div>
@@ -80,7 +90,7 @@ export function SettingsModal({ isOpen, onClose, settings, onSave }: SettingsMod
               min={10}
               max={1024}
               value={settings.maxDownloadKb}
-              onChange={e => handleChange('maxDownloadKb', parseInt(e.target.value) || 95)}
+              onChange={e => handleChange('maxDownloadKb', Math.min(1024, Math.max(10, parseInt(e.target.value) || 95)))}
             />
           </div>
         </div>

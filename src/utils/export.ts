@@ -1,14 +1,19 @@
 import { ProxyRow } from '../types/proxy';
 
 function proxyToUri(p: ProxyRow): string {
-  const scheme = p.proxy_type === 'http' ? 'http' : 'socks5';
+  const scheme = p.proxy_type;
   const auth = p.username && p.password ? `${p.username}:${p.password}@` : '';
   return `${scheme}://${auth}${p.host}:${p.port}`;
 }
 
-export function copyToClipboard(proxies: ProxyRow[]): void {
-  const text = proxies.map(proxyToUri).join('\n');
-  navigator.clipboard.writeText(text);
+export async function copyToClipboard(proxies: ProxyRow[]): Promise<boolean> {
+  try {
+    const text = proxies.map(proxyToUri).join('\n');
+    await navigator.clipboard.writeText(text);
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 export function exportTxt(proxies: ProxyRow[]): void {
@@ -35,7 +40,7 @@ export function exportCsv(proxies: ProxyRow[]): void {
 
   const csv = [headers, ...rows].map(row =>
     row.map(cell => {
-      const str = String(cell);
+      const str = String(cell).replace(/\r?\n/g, ' ');
       return str.includes(',') || str.includes('"') ? `"${str.replace(/"/g, '""')}"` : str;
     }).join(',')
   ).join('\n');

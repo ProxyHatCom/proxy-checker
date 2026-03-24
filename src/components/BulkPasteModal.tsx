@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { parseProxyList } from '../utils/proxyParser';
 import styles from './BulkPasteModal.module.css';
 
@@ -10,6 +10,15 @@ interface BulkPasteModalProps {
 
 export function BulkPasteModal({ isOpen, onClose, onImport }: BulkPasteModalProps) {
   const [text, setText] = useState('');
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleEsc = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', handleEsc);
+    return () => window.removeEventListener('keydown', handleEsc);
+  }, [isOpen, onClose]);
 
   if (!isOpen) return null;
 
@@ -41,6 +50,7 @@ export function BulkPasteModal({ isOpen, onClose, onImport }: BulkPasteModalProp
             rows={12}
             autoFocus
             spellCheck={false}
+            maxLength={500000}
           />
           <div className={styles.preview}>
             {parsed.length > 0 ? (

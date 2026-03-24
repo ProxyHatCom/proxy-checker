@@ -48,7 +48,7 @@
       "endpoints": [
         "https://github.com/ProxyHatCom/proxy-checker/releases/latest/download/latest.json"
       ],
-      "pubkey": ""
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDUxMjZENzFDMDE0QTFENUQKUldSZEhVb0JITmNtVVFna3pnd0VubFI1K0NiYlZTa0hraTlMRW1EbGNLeGMwMVRZZXBxU0I3cU0K"
     }
   }
 }

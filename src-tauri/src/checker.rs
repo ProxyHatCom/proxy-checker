@@ -11,11 +11,11 @@ use tauri::Emitter;
 pub(crate) static ABORT_FLAG: AtomicBool = AtomicBool::new(false);
 
 pub(crate) fn request_stop() {
-    ABORT_FLAG.store(true, Ordering::Relaxed);
+    ABORT_FLAG.store(true, Ordering::SeqCst);
 }
 
 fn is_stopped() -> bool {
-    ABORT_FLAG.load(Ordering::Relaxed)
+    ABORT_FLAG.load(Ordering::SeqCst)
 }
 
 fn build_proxy_url(entry: &ProxyEntry) -> String {
@@ -33,10 +33,28 @@ fn build_proxy_url(entry: &ProxyEntry) -> String {
 
     match (&entry.username, &entry.password) {
         (Some(user), Some(pass)) if !user.is_empty() => {
-            format!("{}://{}:{}@{}", scheme, user, pass, host_port)
+            // URL-encode credentials to handle special characters like @ : /
+            let encoded_user = urlencoding::encode(user);
+            let encoded_pass = urlencoding::encode(pass);
+            format!("{}://{}:{}@{}", scheme, encoded_user, encoded_pass, host_port)
         }
         _ => format!("{}://{}", scheme, host_port),
     }
+}
+
+/// Redact password from proxy URL for safe logging
+fn sanitize_proxy_url(url: &str) -> String {
+    // Match pattern scheme://user:pass@host → scheme://user:***@host
+    if let Some(at_pos) = url.rfind('@') {
+        if let Some(scheme_end) = url.find("://") {
+            let after_scheme = &url[scheme_end + 3..at_pos];
+            if let Some(colon) = after_scheme.find(':') {
+                let user = &after_scheme[..colon];
+                return format!("{}://{}:***@{}", &url[..scheme_end], user, &url[at_pos + 1..]);
+            }
+        }
+    }
+    url.to_string()
 }
 
 fn build_client(
@@ -67,6 +85,11 @@ async fn check_endpoint(
         .send()
         .await
         .map_err(|e| e.to_string())?;
+
+    let status = resp.status();
+    if !status.is_success() {
+        return Err(format!("Endpoint returned HTTP {}", status.as_u16()));
+    }
 
     resp.json::<EndpointResponse>()
         .await
@@ -109,6 +132,11 @@ async fn check_destination(
             .await
             .map_err(|e| e.to_string())?;
 
+        let status = resp.status();
+        if !status.is_success() {
+            return Err(format!("Destination returned HTTP {}", status.as_u16()));
+        }
+
         let latency = start.elapsed().as_millis() as u64;
 
         // Stream body with size cap instead of downloading everything
@@ -126,7 +154,7 @@ async fn check_destination(
         }
 
         let download_duration = download_start.elapsed().as_secs_f64();
-        let speed_mbps = if download_duration > 0.0 {
+        let speed_mbps = if download_duration > 0.001 {
             (total_bytes.min(max_bytes) as f64 / 1_000_000.0) / download_duration
         } else {
             0.0
@@ -145,8 +173,8 @@ pub async fn check_single_proxy(
     config: &CheckConfig,
 ) -> ProxyResult {
     let now = chrono::Utc::now().to_rfc3339();
-    let proxy_url = build_proxy_url(entry);
-    eprintln!("[checker] Starting check for {} ({})", proxy_url, entry.id);
+    let safe_url = sanitize_proxy_url(&build_proxy_url(entry));
+    eprintln!("[checker] Starting check for {} ({})", safe_url, entry.id);
 
     let client = match build_client(entry, config) {
         Ok(c) => c,
@@ -167,7 +195,6 @@ pub async fn check_single_proxy(
         }
     };
 
-    eprintln!("[checker] Building Chrome headers...");
     let headers = match tokio::time::timeout(Duration::from_secs(8), build_chrome_headers()).await {
         Ok(h) => h,
         Err(_) => {
@@ -175,7 +202,6 @@ pub async fn check_single_proxy(
             crate::chrome::build_default_headers()
         }
     };
-    eprintln!("[checker] Headers built, starting checks...");
 
     // Step 1: Check endpoint (if configured)
     let mut real_ip = None;
@@ -184,11 +210,10 @@ pub async fn check_single_proxy(
     let mut anonymity = AnonymityLevel::Unknown;
 
     if let Some(ref endpoint_url) = config.check_endpoint_url {
-        eprintln!("[checker] Checking endpoint: {}", endpoint_url);
         let endpoint_fut = check_endpoint(&client, endpoint_url, &headers);
         match tokio::time::timeout(Duration::from_secs(config.request_timeout_secs), endpoint_fut).await {
             Err(_) => {
-                eprintln!("[checker] Endpoint TIMED OUT");
+                eprintln!("[checker] Endpoint timed out for {}", entry.id);
                 return ProxyResult {
                     id: entry.id.clone(),
                     status: ProxyStatus::Dead,
@@ -203,7 +228,7 @@ pub async fn check_single_proxy(
                 };
             }
             Ok(Err(e)) => {
-                eprintln!("[checker] Endpoint FAILED: {}", e);
+                eprintln!("[checker] Endpoint failed for {}: {}", entry.id, e);
                 return ProxyResult {
                     id: entry.id.clone(),
                     status: ProxyStatus::Dead,
@@ -218,7 +243,6 @@ pub async fn check_single_proxy(
                 };
             }
             Ok(Ok(resp)) => {
-                eprintln!("[checker] Endpoint OK: ip={}", resp.ip);
                 real_ip = Some(resp.ip.clone());
                 anonymity = determine_anonymity(&resp.headers);
 
@@ -230,10 +254,8 @@ pub async fn check_single_proxy(
     }
 
     // Step 2: Check destination URL
-    eprintln!("[checker] Checking destination: {}", config.destination_url);
     match check_destination(&client, &config.destination_url, config.max_download_bytes, &headers, config.request_timeout_secs).await {
         Ok((latency, speed)) => {
-            eprintln!("[checker] Destination OK: latency={}ms speed={:.2}MB/s", latency, speed);
             ProxyResult {
                 id: entry.id.clone(),
                 status: ProxyStatus::Alive,
@@ -276,7 +298,7 @@ pub async fn check_proxies(
     config: CheckConfig,
     window: tauri::Window,
 ) -> Vec<ProxyResult> {
-    ABORT_FLAG.store(false, Ordering::Relaxed);
+    ABORT_FLAG.store(false, Ordering::SeqCst);
 
     let semaphore = Arc::new(Semaphore::new(config.max_threads));
     let config = Arc::new(config);
@@ -288,7 +310,13 @@ pub async fn check_proxies(
         let win = window.clone();
 
         let handle = tokio::spawn(async move {
-            let _permit = sem.acquire().await.unwrap();
+            let _permit = match sem.acquire().await {
+                Ok(p) => p,
+                Err(e) => {
+                    eprintln!("[checker] Semaphore acquire failed: {}", e);
+                    return None;
+                }
+            };
 
             if is_stopped() {
                 return None;
@@ -308,7 +336,7 @@ pub async fn check_proxies(
             let result = match tokio::time::timeout(total_timeout, check_single_proxy(&entry, &cfg)).await {
                 Ok(r) => r,
                 Err(_) => {
-                    eprintln!("[checker] TIMEOUT for {}", entry.id);
+                    eprintln!("[checker] Hard timeout for {}", entry.id);
                     let now = chrono::Utc::now().to_rfc3339();
                     ProxyResult {
                         id: entry.id.clone(),

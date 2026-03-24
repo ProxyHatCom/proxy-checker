@@ -34,6 +34,7 @@ export function ControlsBar({
           value={threads}
           onChange={e => onThreadsChange(parseInt(e.target.value))}
           className={styles.slider}
+          aria-label="Thread count"
         />
       </div>
       <button
