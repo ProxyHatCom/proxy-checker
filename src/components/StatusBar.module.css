@@ -1,0 +1,41 @@
+.bar {
+  display: flex;
+  align-items: center;
+  padding: 8px 20px;
+  background: var(--bg-card);
+  border-top: 1px solid var(--border-primary);
+  gap: 16px;
+}
+
+.stat {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.label {
+  font-size: 11px;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.value {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.alive { color: var(--accent-green); }
+.dead { color: var(--accent-red); }
+.checking { color: var(--accent-blue); }
+
+.divider {
+  width: 1px;
+  height: 16px;
+  background: var(--border-primary);
+}
+
+.spacer {
+  flex: 1;
+}

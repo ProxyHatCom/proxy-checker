@@ -1,0 +1,107 @@
+.bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 20px;
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border-primary);
+}
+
+.left, .right {
+  display: flex;
+  gap: 6px;
+}
+
+.btn {
+  background: var(--bg-card);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-primary);
+  font-size: 12px;
+  padding: 5px 12px;
+}
+
+.btn:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+  border-color: var(--accent-blue);
+}
+
+.btnActive {
+  border-color: var(--accent-blue);
+  color: var(--accent-blue);
+}
+
+.btnDanger {
+  background: var(--bg-card);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-primary);
+  font-size: 12px;
+  padding: 5px 12px;
+}
+
+.btnDanger:hover {
+  border-color: var(--accent-red);
+  color: var(--accent-red);
+}
+
+.dropdown {
+  position: relative;
+}
+
+.dropdownMenu {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 4px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-primary);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  padding: 8px;
+  min-width: 180px;
+  z-index: 100;
+}
+
+.filterGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  margin-bottom: 8px;
+}
+
+.filterGroup label {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.filterGroup select {
+  font-size: 12px;
+  padding: 4px 8px;
+}
+
+.resetBtn {
+  width: 100%;
+  background: transparent;
+  color: var(--accent-red);
+  font-size: 12px;
+  padding: 6px;
+  border: 1px solid var(--accent-red);
+  margin-top: 4px;
+}
+
+.menuItem {
+  width: 100%;
+  background: transparent;
+  color: var(--text-primary);
+  text-align: left;
+  padding: 8px 12px;
+  font-size: 13px;
+  border-radius: var(--radius-sm);
+}
+
+.menuItem:hover {
+  background: var(--bg-hover);
+}

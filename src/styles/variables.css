@@ -1,0 +1,59 @@
+:root {
+  /* Light theme (default) */
+  --bg-primary: #ffffff;
+  --bg-secondary: #f5f7fa;
+  --bg-card: #ffffff;
+  --bg-input: #f0f2f5;
+  --bg-hover: #f0f2f5;
+  --bg-table-header: #f8f9fb;
+  --bg-table-row-alt: #fafbfc;
+  --bg-expanded: #f8f9fb;
+
+  --text-primary: #1a1a2e;
+  --text-secondary: #6b7280;
+  --text-muted: #9ca3af;
+
+  --border-primary: #e5e7eb;
+  --border-secondary: #f0f0f0;
+
+  --accent-blue: #292E91;
+  --accent-purple: #1E1B50;
+  --accent-gradient: linear-gradient(135deg, #292E91, #1E1B50);
+  --accent-green: #22c55e;
+  --accent-red: #ef4444;
+  --accent-yellow: #f59e0b;
+  --accent-orange: #f97316;
+
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.12);
+
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+
+  --font-family: 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-mono: 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', monospace;
+}
+
+[data-theme="dark"] {
+  --bg-primary: #0a0a0f;
+  --bg-secondary: #111118;
+  --bg-card: #16161f;
+  --bg-input: #1e1e2a;
+  --bg-hover: #1e1e2a;
+  --bg-table-header: #13131a;
+  --bg-table-row-alt: #12121a;
+  --bg-expanded: #13131a;
+
+  --text-primary: #f0f0f2;
+  --text-secondary: #a0a0b0;
+  --text-muted: #6b6b7b;
+
+  --border-primary: #2a2a3a;
+  --border-secondary: #1f1f2f;
+
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.5);
+}

@@ -1,0 +1,29 @@
+.group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 14px;
+}
+
+.group label {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.group input {
+  padding: 8px 12px;
+  font-family: var(--font-mono);
+  font-size: 13px;
+}
+
+.row {
+  display: flex;
+  gap: 12px;
+}
+
+.row .group {
+  flex: 1;
+}
