@@ -261,9 +261,15 @@ pub async fn check_single_proxy(
                 real_ip = Some(resp.ip.clone());
                 anonymity = determine_anonymity(&resp.headers);
 
-                let geo_info = geo::lookup_ip(&resp.ip);
-                country = geo_info.country;
-                city = geo_info.city;
+                // Use geo data from server, fallback to local DB
+                country = resp.country.or_else(|| {
+                    let g = geo::lookup_ip(&resp.ip);
+                    g.country
+                });
+                city = resp.city.or_else(|| {
+                    let g = geo::lookup_ip(&resp.ip);
+                    g.city
+                });
             }
         }
     }

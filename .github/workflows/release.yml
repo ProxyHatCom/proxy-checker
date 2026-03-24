@@ -50,13 +50,6 @@ jobs:
 
       - name: Install frontend deps
         run: npm install
-
-      - name: Create GeoIP placeholder
-        shell: bash
-        run: |
-          mkdir -p src-tauri/resources
-          touch src-tauri/resources/GeoLite2-City.mmdb
-
       - name: Build Tauri app
         uses: tauri-apps/tauri-action@v0
         env:

@@ -55,6 +55,8 @@ pub struct ProxyResult {
 pub struct EndpointResponse {
     pub ip: String,
     pub headers: std::collections::HashMap<String, String>,
+    pub country: Option<String>,
+    pub city: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
