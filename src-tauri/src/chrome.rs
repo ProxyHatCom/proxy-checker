@@ -34,25 +34,30 @@ pub async fn get_chrome_version() -> (String, String) {
         })
     });
 
-    let mut guard = cache.lock().await;
-
-    let needs_fetch = match guard.fetched_at {
-        Some(t) => t.elapsed().as_secs() >= CACHE_DURATION_SECS,
-        None => true,
+    // Check cache under lock, release before network call
+    let (needs_fetch, current) = {
+        let guard = cache.lock().await;
+        let needs = match guard.fetched_at {
+            Some(t) => t.elapsed().as_secs() >= CACHE_DURATION_SECS,
+            None => true,
+        };
+        (needs, (guard.version.clone(), guard.major.clone()))
     };
 
     if !needs_fetch {
-        return (guard.version.clone(), guard.major.clone());
+        return current;
     }
 
+    // Fetch without holding the lock — other tasks use fallback/cached version
     match fetch_latest_chrome_version().await {
         Ok((version, major)) => {
+            let mut guard = cache.lock().await;
             guard.version = version.clone();
             guard.major = major.clone();
             guard.fetched_at = Some(std::time::Instant::now());
             (version, major)
         }
-        Err(_) => (guard.version.clone(), guard.major.clone()),
+        Err(_) => current,
     }
 }
 

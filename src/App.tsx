@@ -200,8 +200,16 @@ function App() {
     const allIds = filteredProxies.map(p => p.id);
     setSelectedIds(prev => {
       const allSelected = allIds.every(id => prev.has(id));
-      if (allSelected) return new Set();
-      return new Set(allIds);
+      if (allSelected) {
+        // Only deselect the visible (filtered) proxies, keep hidden selections
+        const next = new Set(prev);
+        allIds.forEach(id => next.delete(id));
+        return next;
+      }
+      // Select all visible
+      const next = new Set(prev);
+      allIds.forEach(id => next.add(id));
+      return next;
     });
   }, [filteredProxies]);
 
@@ -213,32 +221,46 @@ function App() {
     setSelectedIds(new Set());
   }, []);
 
-  // Bulk actions
+  // Helper: only the selected proxies that are currently visible (after filters)
+  const getVisibleSelected = useCallback(() => {
+    return filteredProxies.filter(p => selectedIds.has(p.id));
+  }, [filteredProxies, selectedIds]);
+
+  // Bulk actions — always scoped to visible selected proxies only
   const handleBulkChangeType = useCallback((type: ProxyType) => {
-    selectedIds.forEach(id => store.updateProxy(id, { proxy_type: type }));
-    showToast(`Changed type to ${type.toUpperCase()} for ${selectedIds.size} proxies`);
-  }, [selectedIds, store.updateProxy, showToast]);
+    const targets = getVisibleSelected();
+    targets.forEach(p => store.updateProxy(p.id, { proxy_type: type }));
+    showToast(`Changed type to ${type.toUpperCase()} for ${targets.length} proxies`);
+  }, [getVisibleSelected, store.updateProxy, showToast]);
 
   const handleBulkChangePort = useCallback((port: number) => {
-    selectedIds.forEach(id => store.updateProxy(id, { port }));
-    showToast(`Changed port to ${port} for ${selectedIds.size} proxies`);
-  }, [selectedIds, store.updateProxy, showToast]);
+    const targets = getVisibleSelected();
+    targets.forEach(p => store.updateProxy(p.id, { port }));
+    showToast(`Changed port to ${port} for ${targets.length} proxies`);
+  }, [getVisibleSelected, store.updateProxy, showToast]);
 
   const handleBulkDelete = useCallback(() => {
-    selectedIds.forEach(id => store.removeProxy(id));
-    setSelectedIds(new Set());
-    showToast(`Deleted ${selectedIds.size} proxies`);
-  }, [selectedIds, store.removeProxy, showToast]);
+    const targets = getVisibleSelected();
+    const ids = targets.map(p => p.id);
+    ids.forEach(id => store.removeProxy(id));
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      ids.forEach(id => next.delete(id));
+      return next;
+    });
+    showToast(`Deleted ${targets.length} proxies`);
+  }, [getVisibleSelected, store.removeProxy, showToast]);
 
   const handleBulkCopy = useCallback(async () => {
-    const selected = store.proxies.filter(p => selectedIds.has(p.id));
-    const ok = await copyToClipboard(selected);
-    showToast(ok ? `Copied ${selected.length} proxies` : 'Failed to copy', ok ? 'success' : 'error');
-  }, [selectedIds, store.proxies, showToast]);
+    const targets = getVisibleSelected();
+    const ok = await copyToClipboard(targets);
+    showToast(ok ? `Copied ${targets.length} proxies` : 'Failed to copy', ok ? 'success' : 'error');
+  }, [getVisibleSelected, showToast]);
 
   const handleBulkRecheck = useCallback(async () => {
-    const entries: ProxyEntry[] = store.proxies
-      .filter(p => selectedIds.has(p.id) && p.host && p.port)
+    if (isChecking) return;
+    const entries: ProxyEntry[] = getVisibleSelected()
+      .filter(p => p.host && p.port)
       .map(p => ({
         id: p.id, proxy_type: p.proxy_type, host: p.host,
         port: p.port, username: p.username, password: p.password,
@@ -265,7 +287,7 @@ function App() {
     } finally {
       setIsChecking(false);
     }
-  }, [selectedIds, store.proxies, url, threads, settings, showToast]);
+  }, [isChecking, getVisibleSelected, url, threads, settings, showToast]);
 
   const handleCopyClipboard = useCallback(async () => {
     const ok = await copyToClipboard(filteredProxies);
@@ -315,6 +337,7 @@ function App() {
           onDeselectAll={handleDeselectAll}
           onChangeType={handleBulkChangeType}
           onChangePort={handleBulkChangePort}
+          isChecking={isChecking}
           onRecheck={handleBulkRecheck}
           onCopy={handleBulkCopy}
           onDelete={handleBulkDelete}

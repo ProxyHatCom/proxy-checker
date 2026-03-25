@@ -9,6 +9,7 @@ interface SelectionBarProps {
   onDeselectAll: () => void;
   onChangeType: (type: ProxyType) => void;
   onChangePort: (port: number) => void;
+  isChecking?: boolean;
   onRecheck: () => void;
   onCopy: () => void;
   onDelete: () => void;
@@ -16,7 +17,7 @@ interface SelectionBarProps {
 
 export function SelectionBar({
   count, total, onSelectAll, onDeselectAll,
-  onChangeType, onChangePort, onRecheck, onCopy, onDelete,
+  onChangeType, onChangePort, isChecking, onRecheck, onCopy, onDelete,
 }: SelectionBarProps) {
   const [showPortInput, setShowPortInput] = useState(false);
   const [portValue, setPortValue] = useState('');
@@ -81,9 +82,9 @@ export function SelectionBar({
 
         <div className={styles.sep} />
 
-        <button className={styles.actionBtn} onClick={onRecheck} title="Re-check selected">
+        <button className={styles.actionBtn} onClick={onRecheck} disabled={isChecking} title="Re-check selected">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
-          Re-check
+          {isChecking ? 'Checking...' : 'Re-check'}
         </button>
         <button className={styles.actionBtn} onClick={onCopy} title="Copy selected">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>

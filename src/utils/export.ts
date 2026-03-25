@@ -2,7 +2,7 @@ import { ProxyRow } from '../types/proxy';
 
 function proxyToUri(p: ProxyRow): string {
   const scheme = p.proxy_type;
-  const auth = p.username && p.password ? `${p.username}:${p.password}@` : '';
+  const auth = p.username ? `${p.username}${p.password ? ':' + p.password : ''}@` : '';
   return `${scheme}://${auth}${p.host}:${p.port}`;
 }
 

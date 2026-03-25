@@ -218,7 +218,7 @@ export function ProxyTable({ proxies, onUpdate, onRemove, selectedIds, onToggleS
                     className={styles.copyBtn}
                     onClick={e => {
                       e.stopPropagation();
-                      const auth = p.username && p.password ? `${p.username}:${p.password}@` : '';
+                      const auth = p.username ? `${p.username}${p.password ? ':' + p.password : ''}@` : '';
                       navigator.clipboard.writeText(`${p.proxy_type}://${auth}${p.host}:${p.port}`);
                     }}
                     title="Copy proxy"
