@@ -1,4 +1,4 @@
-import { useState, Fragment, useMemo } from 'react';
+import { useState, useRef, useCallback, useEffect, Fragment, useMemo } from 'react';
 import { ProxyRow, ProxyType } from '../types/proxy';
 import styles from './ProxyTable.module.css';
 
@@ -13,6 +13,22 @@ interface ProxyTableProps {
 
 type SortKey = 'type' | 'host' | 'port' | 'status' | 'latency' | 'speed' | 'country' | 'anonymity';
 type SortDir = 'asc' | 'desc';
+
+// Column definitions: key, default width %, min width px
+const COLUMNS = [
+  { key: 'check',    pct: 3,  min: 30,  resizable: false },
+  { key: 'type',     pct: 7,  min: 50,  resizable: true },
+  { key: 'host',     pct: 18, min: 80,  resizable: true },
+  { key: 'port',     pct: 5,  min: 40,  resizable: true },
+  { key: 'user',     pct: 13, min: 50,  resizable: true },
+  { key: 'pass',     pct: 13, min: 50,  resizable: true },
+  { key: 'status',   pct: 6,  min: 45,  resizable: true },
+  { key: 'latency',  pct: 7,  min: 45,  resizable: true },
+  { key: 'speed',    pct: 8,  min: 50,  resizable: true },
+  { key: 'country',  pct: 8,  min: 50,  resizable: true },
+  { key: 'anon',     pct: 6,  min: 40,  resizable: true },
+  { key: 'actions',  pct: 6,  min: 50,  resizable: false },
+] as const;
 
 function StatusBadge({ status }: { status?: string }) {
   if (!status || status === 'pending') return <span className={styles.statusPending}>--</span>;
@@ -65,6 +81,57 @@ export function ProxyTable({ proxies, onUpdate, onRemove, selectedIds, onToggleS
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [sortKey, setSortKey] = useState<SortKey | null>(null);
   const [sortDir, setSortDir] = useState<SortDir>('asc');
+  const [colWidths, setColWidths] = useState<number[]>(() => COLUMNS.map(c => c.pct));
+  const tableRef = useRef<HTMLTableElement>(null);
+  const dragRef = useRef<{ colIdx: number; startX: number; startPct: number } | null>(null);
+
+  // Compute initial pixel-based widths from table on first render
+  useEffect(() => {
+    if (!tableRef.current) return;
+    const tableW = tableRef.current.offsetWidth;
+    if (tableW > 0) {
+      const ths = tableRef.current.querySelectorAll('thead th');
+      if (ths.length === COLUMNS.length) {
+        const pcts = Array.from(ths).map(th => ((th as HTMLElement).offsetWidth / tableW) * 100);
+        setColWidths(pcts);
+      }
+    }
+  }, []);
+
+  const handleResizeStart = useCallback((e: React.MouseEvent, colIdx: number) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dragRef.current = { colIdx, startX: e.clientX, startPct: colWidths[colIdx] };
+
+    const onMove = (ev: MouseEvent) => {
+      if (!dragRef.current || !tableRef.current) return;
+      const tableW = tableRef.current.offsetWidth;
+      const deltaPx = ev.clientX - dragRef.current.startX;
+      const deltaPct = (deltaPx / tableW) * 100;
+      const newPct = Math.max(
+        (COLUMNS[dragRef.current.colIdx].min / tableW) * 100,
+        dragRef.current.startPct + deltaPct
+      );
+      setColWidths(prev => {
+        const next = [...prev];
+        next[dragRef.current!.colIdx] = newPct;
+        return next;
+      });
+    };
+
+    const onUp = () => {
+      dragRef.current = null;
+      document.removeEventListener('mousemove', onMove);
+      document.removeEventListener('mouseup', onUp);
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+    };
+
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onUp);
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+  }, [colWidths]);
 
   const handleSort = (key: SortKey) => {
     if (sortKey === key) {
@@ -89,9 +156,21 @@ export function ProxyTable({ proxies, onUpdate, onRemove, selectedIds, onToggleS
   const allSelected = proxies.length > 0 && proxies.every(p => selectedIds.has(p.id));
   const someSelected = proxies.some(p => selectedIds.has(p.id));
 
+  const resizeHandle = (colIdx: number) => (
+    <div
+      className={styles.resizeHandle}
+      onMouseDown={e => handleResizeStart(e, colIdx)}
+    />
+  );
+
   return (
     <div className={styles.tableWrap}>
-      <table className={styles.table}>
+      <table className={styles.table} ref={tableRef}>
+        <colgroup>
+          {colWidths.map((w, i) => (
+            <col key={i} style={{ width: `${w}%` }} />
+          ))}
+        </colgroup>
         <thead>
           <tr>
             <th className={styles.thCheck}>
@@ -105,29 +184,43 @@ export function ProxyTable({ proxies, onUpdate, onRemove, selectedIds, onToggleS
             </th>
             <th className={styles.thType} onClick={() => handleSort('type')} role="button" aria-label="Sort by type">
               Type <SortIcon active={sortKey === 'type'} dir={sortDir} />
+              {resizeHandle(1)}
             </th>
             <th className={styles.thHost} onClick={() => handleSort('host')} role="button" aria-label="Sort by host">
               Host <SortIcon active={sortKey === 'host'} dir={sortDir} />
+              {resizeHandle(2)}
             </th>
             <th className={styles.thPort} onClick={() => handleSort('port')} role="button" aria-label="Sort by port">
               Port <SortIcon active={sortKey === 'port'} dir={sortDir} />
+              {resizeHandle(3)}
             </th>
-            <th className={styles.thUser}>Username</th>
-            <th className={styles.thPass}>Password</th>
+            <th className={styles.thUser}>
+              Username
+              {resizeHandle(4)}
+            </th>
+            <th className={styles.thPass}>
+              Password
+              {resizeHandle(5)}
+            </th>
             <th className={styles.thStatus} onClick={() => handleSort('status')} role="button" aria-label="Sort by status">
               Status <SortIcon active={sortKey === 'status'} dir={sortDir} />
+              {resizeHandle(6)}
             </th>
             <th className={styles.thLat} onClick={() => handleSort('latency')} role="button" aria-label="Sort by latency">
               Latency <SortIcon active={sortKey === 'latency'} dir={sortDir} />
+              {resizeHandle(7)}
             </th>
             <th className={styles.thSpeed} onClick={() => handleSort('speed')} role="button" aria-label="Sort by speed">
               Speed <SortIcon active={sortKey === 'speed'} dir={sortDir} />
+              {resizeHandle(8)}
             </th>
             <th className={styles.thGeo} onClick={() => handleSort('country')} role="button" aria-label="Sort by country">
               Country <SortIcon active={sortKey === 'country'} dir={sortDir} />
+              {resizeHandle(9)}
             </th>
             <th className={styles.thAnon} onClick={() => handleSort('anonymity')} role="button" aria-label="Sort by anonymity">
               Anon <SortIcon active={sortKey === 'anonymity'} dir={sortDir} />
+              {resizeHandle(10)}
             </th>
             <th className={styles.thActions}></th>
           </tr>

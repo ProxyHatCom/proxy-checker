@@ -16,6 +16,7 @@
 }
 
 .table th {
+  position: relative;
   background: var(--bg-table-header);
   padding: 8px 8px;
   text-align: left;
@@ -42,22 +43,39 @@
   color: var(--text-primary);
 }
 
-.thCheck { width: 3%; text-align: center; cursor: default !important; }
-.thType { width: 7%; }
-.thHost { width: 18%; }
-.thPort { width: 5%; }
-.thUser { width: 13%; cursor: default !important; }
-.thPass { width: 13%; cursor: default !important; }
-.thStatus { width: 6%; text-align: center; }
-.thLat { width: 7%; text-align: right; }
-.thSpeed { width: 8%; text-align: right; }
-.thGeo { width: 8%; }
-.thAnon { width: 6%; text-align: center; }
-.thActions { width: 6%; }
+.thCheck { text-align: center; cursor: default !important; }
+.thType { }
+.thHost { }
+.thPort { }
+.thUser { cursor: default !important; }
+.thPass { cursor: default !important; }
+.thStatus { text-align: center; }
+.thLat { text-align: right; }
+.thSpeed { text-align: right; }
+.thGeo { }
+.thAnon { text-align: center; }
+.thActions { }
 
 .thCheck:hover, .thUser:hover, .thPass:hover {
   background: var(--bg-table-header) !important;
   color: var(--text-muted) !important;
+}
+
+/* Column resize handle */
+.resizeHandle {
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: 5px;
+  cursor: col-resize;
+  z-index: 1;
+}
+
+.resizeHandle:hover,
+.resizeHandle:active {
+  background: var(--accent-blue);
+  opacity: 0.4;
 }
 
 /* Checkbox */
