@@ -42,21 +42,43 @@
   color: var(--text-primary);
 }
 
-.thType { width: 7.5%; }
-.thHost { width: 19%; }
-.thPort { width: 5.5%; }
-.thUser { width: 14%; cursor: default !important; }
-.thPass { width: 14%; cursor: default !important; }
+.thCheck { width: 3%; text-align: center; cursor: default !important; }
+.thType { width: 7%; }
+.thHost { width: 18%; }
+.thPort { width: 5%; }
+.thUser { width: 13%; cursor: default !important; }
+.thPass { width: 13%; cursor: default !important; }
 .thStatus { width: 6%; text-align: center; }
 .thLat { width: 7%; text-align: right; }
 .thSpeed { width: 8%; text-align: right; }
 .thGeo { width: 8%; }
 .thAnon { width: 6%; text-align: center; }
-.thActions { width: 5%; }
+.thActions { width: 6%; }
 
-.thUser:hover, .thPass:hover {
+.thCheck:hover, .thUser:hover, .thPass:hover {
   background: var(--bg-table-header) !important;
   color: var(--text-muted) !important;
+}
+
+/* Checkbox */
+.checkbox {
+  width: 14px;
+  height: 14px;
+  cursor: pointer;
+  accent-color: var(--accent-blue);
+}
+
+.checkCell {
+  text-align: center;
+}
+
+/* Selected row */
+.rowSelected {
+  background: color-mix(in srgb, var(--accent-blue) 6%, transparent);
+}
+
+.rowSelected:hover {
+  background: color-mix(in srgb, var(--accent-blue) 10%, transparent);
 }
 
 /* Sort icons */

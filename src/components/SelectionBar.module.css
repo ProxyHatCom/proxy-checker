@@ -1,0 +1,117 @@
+.bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 20px;
+  background: color-mix(in srgb, var(--accent-blue) 8%, var(--bg-secondary));
+  border-bottom: 1px solid var(--accent-blue);
+  min-height: 38px;
+}
+
+.left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.count {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--accent-blue);
+}
+
+.link {
+  font-size: 11px;
+  color: var(--text-muted);
+  background: transparent;
+  padding: 2px 6px;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.link:hover {
+  color: var(--accent-blue);
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.typeSelect {
+  font-size: 11px;
+  padding: 4px 8px;
+  border: 1px solid var(--border-primary);
+  background: var(--bg-card);
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.typeSelect:hover {
+  border-color: var(--accent-blue);
+}
+
+.actionBtn {
+  font-size: 11px;
+  padding: 4px 10px;
+  background: var(--bg-card);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-primary);
+  border-radius: var(--radius-sm);
+}
+
+.actionBtn:hover {
+  border-color: var(--accent-blue);
+  color: var(--accent-blue);
+}
+
+.deleteBtn {
+  font-size: 11px;
+  padding: 4px 10px;
+  background: var(--bg-card);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-primary);
+  border-radius: var(--radius-sm);
+}
+
+.deleteBtn:hover {
+  border-color: var(--accent-red);
+  color: var(--accent-red);
+}
+
+.sep {
+  width: 1px;
+  height: 18px;
+  background: var(--border-primary);
+  margin: 0 4px;
+}
+
+.portInputWrap {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.portInput {
+  width: 70px;
+  font-size: 11px;
+  padding: 4px 6px;
+  border: 1px solid var(--accent-blue);
+  border-radius: var(--radius-sm);
+}
+
+.portInput::-webkit-outer-spin-button,
+.portInput::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.portOk {
+  font-size: 11px;
+  padding: 4px 8px;
+  background: var(--accent-blue);
+  color: white;
+  border-radius: var(--radius-sm);
+}

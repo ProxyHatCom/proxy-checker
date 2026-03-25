@@ -6,6 +6,9 @@ interface ProxyTableProps {
   proxies: ProxyRow[];
   onUpdate: (id: string, updates: Partial<ProxyRow>) => void;
   onRemove: (id: string) => void;
+  selectedIds: Set<string>;
+  onToggleSelect: (id: string) => void;
+  onToggleAll: () => void;
 }
 
 type SortKey = 'type' | 'host' | 'port' | 'status' | 'latency' | 'speed' | 'country' | 'anonymity';
@@ -58,7 +61,7 @@ function SortIcon({ active, dir }: { active: boolean; dir: SortDir }) {
   return <span className={styles.sortIconActive}>{dir === 'asc' ? '\u2191' : '\u2193'}</span>;
 }
 
-export function ProxyTable({ proxies, onUpdate, onRemove }: ProxyTableProps) {
+export function ProxyTable({ proxies, onUpdate, onRemove, selectedIds, onToggleSelect, onToggleAll }: ProxyTableProps) {
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [sortKey, setSortKey] = useState<SortKey | null>(null);
   const [sortDir, setSortDir] = useState<SortDir>('asc');
@@ -66,7 +69,7 @@ export function ProxyTable({ proxies, onUpdate, onRemove }: ProxyTableProps) {
   const handleSort = (key: SortKey) => {
     if (sortKey === key) {
       if (sortDir === 'asc') setSortDir('desc');
-      else { setSortKey(null); setSortDir('asc'); } // third click resets
+      else { setSortKey(null); setSortDir('asc'); }
     } else {
       setSortKey(key);
       setSortDir('asc');
@@ -83,11 +86,23 @@ export function ProxyTable({ proxies, onUpdate, onRemove }: ProxyTableProps) {
     });
   }, [proxies, sortKey, sortDir]);
 
+  const allSelected = proxies.length > 0 && proxies.every(p => selectedIds.has(p.id));
+  const someSelected = proxies.some(p => selectedIds.has(p.id));
+
   return (
     <div className={styles.tableWrap}>
       <table className={styles.table}>
         <thead>
           <tr>
+            <th className={styles.thCheck}>
+              <input
+                type="checkbox"
+                className={styles.checkbox}
+                checked={allSelected}
+                ref={el => { if (el) el.indeterminate = someSelected && !allSelected; }}
+                onChange={onToggleAll}
+              />
+            </th>
             <th className={styles.thType} onClick={() => handleSort('type')} role="button" aria-label="Sort by type">
               Type <SortIcon active={sortKey === 'type'} dir={sortDir} />
             </th>
@@ -121,9 +136,17 @@ export function ProxyTable({ proxies, onUpdate, onRemove }: ProxyTableProps) {
           {sorted.map((p) => (
             <Fragment key={p.id}>
               <tr
-                className={`${styles.row} ${expandedId === p.id ? styles.rowExpanded : ''}`}
+                className={`${styles.row} ${expandedId === p.id ? styles.rowExpanded : ''} ${selectedIds.has(p.id) ? styles.rowSelected : ''}`}
                 onClick={() => setExpandedId(expandedId === p.id ? null : p.id)}
               >
+                <td className={styles.checkCell} onClick={e => e.stopPropagation()}>
+                  <input
+                    type="checkbox"
+                    className={styles.checkbox}
+                    checked={selectedIds.has(p.id)}
+                    onChange={() => onToggleSelect(p.id)}
+                  />
+                </td>
                 <td>
                   <select
                     value={p.proxy_type}
@@ -213,7 +236,7 @@ export function ProxyTable({ proxies, onUpdate, onRemove }: ProxyTableProps) {
               </tr>
               {expandedId === p.id && p.result && (
                 <tr key={`${p.id}-exp`} className={styles.expandedRow}>
-                  <td colSpan={11}>
+                  <td colSpan={12}>
                     <div className={styles.expandedContent}>
                       <div className={styles.detailItem}>
                         <span className={styles.detailLabel}>Real IP</span>

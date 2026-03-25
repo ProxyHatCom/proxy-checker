@@ -7,6 +7,7 @@ import { relaunch } from '@tauri-apps/plugin-process';
 import { Header } from './components/Header';
 import { ControlsBar } from './components/ControlsBar';
 import { ActionBar } from './components/ActionBar';
+import { SelectionBar } from './components/SelectionBar';
 import { ProxyTable } from './components/ProxyTable';
 import { StatusBar } from './components/StatusBar';
 import { BulkPasteModal } from './components/BulkPasteModal';
@@ -15,7 +16,7 @@ import { Toast } from './components/Toast';
 import { useProxyStore } from './hooks/useProxyStore';
 import { FilterState, defaultFilters, applyFilters } from './utils/filters';
 import { copyToClipboard, exportCsv, exportTxt } from './utils/export';
-import { ProxyEntry, ProxyResult, CheckConfig } from './types/proxy';
+import { ProxyEntry, ProxyResult, ProxyType, CheckConfig } from './types/proxy';
 import './styles/global.css';
 
 const DEFAULT_SETTINGS: Settings = {
@@ -37,6 +38,7 @@ function App() {
   const [appVersion, setAppVersion] = useState('');
   const [updateAvailable, setUpdateAvailable] = useState<{ version: string; body?: string } | null>(null);
   const [isUpdating, setIsUpdating] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [settings, setSettings] = useState<Settings>(() => {
     try {
       const saved = localStorage.getItem('proxychecker-settings');
@@ -182,6 +184,86 @@ function App() {
 
   const filteredProxies = applyFilters(store.proxies, filters);
 
+  // Selection handlers
+  const handleToggleSelect = useCallback((id: string) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  }, []);
+
+  const handleToggleAll = useCallback(() => {
+    const allIds = filteredProxies.map(p => p.id);
+    setSelectedIds(prev => {
+      const allSelected = allIds.every(id => prev.has(id));
+      if (allSelected) return new Set();
+      return new Set(allIds);
+    });
+  }, [filteredProxies]);
+
+  const handleSelectAll = useCallback(() => {
+    setSelectedIds(new Set(filteredProxies.map(p => p.id)));
+  }, [filteredProxies]);
+
+  const handleDeselectAll = useCallback(() => {
+    setSelectedIds(new Set());
+  }, []);
+
+  // Bulk actions
+  const handleBulkChangeType = useCallback((type: ProxyType) => {
+    selectedIds.forEach(id => store.updateProxy(id, { proxy_type: type }));
+    showToast(`Changed type to ${type.toUpperCase()} for ${selectedIds.size} proxies`);
+  }, [selectedIds, store.updateProxy, showToast]);
+
+  const handleBulkChangePort = useCallback((port: number) => {
+    selectedIds.forEach(id => store.updateProxy(id, { port }));
+    showToast(`Changed port to ${port} for ${selectedIds.size} proxies`);
+  }, [selectedIds, store.updateProxy, showToast]);
+
+  const handleBulkDelete = useCallback(() => {
+    selectedIds.forEach(id => store.removeProxy(id));
+    setSelectedIds(new Set());
+    showToast(`Deleted ${selectedIds.size} proxies`);
+  }, [selectedIds, store.removeProxy, showToast]);
+
+  const handleBulkCopy = useCallback(async () => {
+    const selected = store.proxies.filter(p => selectedIds.has(p.id));
+    const ok = await copyToClipboard(selected);
+    showToast(ok ? `Copied ${selected.length} proxies` : 'Failed to copy', ok ? 'success' : 'error');
+  }, [selectedIds, store.proxies, showToast]);
+
+  const handleBulkRecheck = useCallback(async () => {
+    const entries: ProxyEntry[] = store.proxies
+      .filter(p => selectedIds.has(p.id) && p.host && p.port)
+      .map(p => ({
+        id: p.id, proxy_type: p.proxy_type, host: p.host,
+        port: p.port, username: p.username, password: p.password,
+      }));
+
+    if (entries.length === 0) {
+      showToast('No valid selected proxies to check', 'error');
+      return;
+    }
+
+    setIsChecking(true);
+    const config: CheckConfig = {
+      destination_url: url || 'https://www.google.com',
+      max_threads: threads,
+      connection_timeout_secs: settings.connectionTimeout,
+      request_timeout_secs: settings.requestTimeout,
+      check_endpoint_url: 'https://checker-api.proxyhat.com/check',
+    };
+
+    try {
+      await invoke('check_all_proxies', { entries, config });
+    } catch (err) {
+      showToast(`Check failed: ${err instanceof Error ? err.message : String(err)}`, 'error');
+    } finally {
+      setIsChecking(false);
+    }
+  }, [selectedIds, store.proxies, url, threads, settings, showToast]);
+
   const handleCopyClipboard = useCallback(async () => {
     const ok = await copyToClipboard(filteredProxies);
     showToast(ok ? 'Copied to clipboard' : 'Failed to copy', ok ? 'success' : 'error');
@@ -214,7 +296,7 @@ function App() {
       <ActionBar
         onAdd={() => store.addProxy()}
         onPaste={() => setShowPaste(true)}
-        onClear={store.clearAll}
+        onClear={() => { store.clearAll(); setSelectedIds(new Set()); }}
         filters={filters}
         onFiltersChange={setFilters}
         onExportClipboard={handleCopyClipboard}
@@ -222,10 +304,26 @@ function App() {
         onExportTxt={() => { exportTxt(filteredProxies); showToast('TXT exported'); }}
         countries={countries}
       />
+      {selectedIds.size > 0 && (
+        <SelectionBar
+          count={selectedIds.size}
+          total={filteredProxies.length}
+          onSelectAll={handleSelectAll}
+          onDeselectAll={handleDeselectAll}
+          onChangeType={handleBulkChangeType}
+          onChangePort={handleBulkChangePort}
+          onRecheck={handleBulkRecheck}
+          onCopy={handleBulkCopy}
+          onDelete={handleBulkDelete}
+        />
+      )}
       <ProxyTable
         proxies={filteredProxies}
         onUpdate={store.updateProxy}
         onRemove={store.removeProxy}
+        selectedIds={selectedIds}
+        onToggleSelect={handleToggleSelect}
+        onToggleAll={handleToggleAll}
       />
       <StatusBar proxies={store.proxies} />
 
