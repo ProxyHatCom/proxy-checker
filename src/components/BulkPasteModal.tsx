@@ -46,7 +46,7 @@ export function BulkPasteModal({ isOpen, onClose, onImport }: BulkPasteModalProp
             className={styles.textarea}
             value={text}
             onChange={e => setText(e.target.value)}
-            placeholder={`Paste proxies, one per line. Supported formats:\n\nip:port\nip:port:user:pass\nuser:pass@ip:port\nsocks5://ip:port\nhttp://user:pass@ip:port`}
+            placeholder={`Paste proxies, one per line. Supported formats:\n\nhost:port\nhost:port:user:pass\nuser:pass@host:port\nsocks5://user:pass@host:port\nhttp://user:pass@host:port`}
             rows={12}
             autoFocus
             spellCheck={false}

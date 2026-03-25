@@ -12,11 +12,19 @@ function isValidPort(port: number): boolean {
   return Number.isInteger(port) && port >= 1 && port <= 65535;
 }
 
+/** Strip BOM, zero-width chars, and other invisible Unicode junk from pasted text */
+function sanitize(s: string): string {
+  return s.replace(/[\u200B-\u200D\uFEFF\u00A0\u2060]/g, '').trim();
+}
+
 export function parseProxyList(text: string): ParsedProxy[] {
-  const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+  // Normalize line endings, split, clean each line
+  const lines = text.replace(/\r\n?/g, '\n').split('\n');
   const results: ParsedProxy[] = [];
 
-  for (const line of lines) {
+  for (const raw of lines) {
+    const line = sanitize(raw);
+    if (!line) continue;
     const parsed = parseSingleProxy(line);
     if (parsed) results.push(parsed);
   }
@@ -24,51 +32,81 @@ export function parseProxyList(text: string): ParsedProxy[] {
   return results;
 }
 
+function parseScheme(scheme: string): ProxyType {
+  const s = scheme.toLowerCase();
+  if (s === 'socks5') return 'socks5';
+  if (s === 'socks5h') return 'socks5h';
+  return 'http';
+}
+
 function parseSingleProxy(line: string): ParsedProxy | null {
-  // Remove comments
-  const cleanLine = line.split('#')[0].trim();
+  // Strip trailing comments (only if # is preceded by whitespace)
+  const commentIdx = line.search(/\s+#/);
+  const cleanLine = commentIdx >= 0 ? line.slice(0, commentIdx).trim() : line;
   if (!cleanLine) return null;
 
-  // Try URI format: socks5://user:pass@host:port or http://host:port
-  const uriMatch = cleanLine.match(
-    /^(https?|socks5h?):\/\/(?:([^:@]+):([^@]+)@)?([^:\/]+):(\d+)\/?$/i
-  );
-  if (uriMatch) {
-    const port = parseInt(uriMatch[5], 10);
-    if (!isValidPort(port)) return null;
+  // 1. URI format: protocol://[user:pass@]host:port
+  //    Supports: http, https, socks5, socks5h
+  const schemeEnd = cleanLine.indexOf('://');
+  if (schemeEnd > 0) {
+    const scheme = cleanLine.slice(0, schemeEnd);
+    if (/^(https?|socks5h?)$/i.test(scheme)) {
+      const rest = cleanLine.slice(schemeEnd + 3).replace(/\/+$/, ''); // strip trailing slashes
+      let user: string | null = null;
+      let pass: string | null = null;
+      let hostPort: string;
 
-    const scheme = uriMatch[1].toLowerCase();
-    let proxyType: ProxyType = 'http';
-    if (scheme === 'socks5') proxyType = 'socks5';
-    else if (scheme === 'socks5h') proxyType = 'socks5h';
+      const atIdx = rest.lastIndexOf('@');
+      if (atIdx >= 0) {
+        const authPart = rest.slice(0, atIdx);
+        hostPort = rest.slice(atIdx + 1);
+        const colonIdx = authPart.indexOf(':');
+        if (colonIdx >= 0) {
+          user = decodeURIComponent(authPart.slice(0, colonIdx));
+          pass = decodeURIComponent(authPart.slice(colonIdx + 1));
+        } else {
+          user = decodeURIComponent(authPart);
+        }
+      } else {
+        hostPort = rest;
+      }
 
-    return {
-      proxy_type: proxyType,
-      host: uriMatch[4],
-      port,
-      username: uriMatch[2] || null,
-      password: uriMatch[3] || null,
-    };
+      const lastColon = hostPort.lastIndexOf(':');
+      if (lastColon >= 0) {
+        const host = hostPort.slice(0, lastColon);
+        const port = parseInt(hostPort.slice(lastColon + 1), 10);
+        if (host && isValidPort(port)) {
+          return { proxy_type: parseScheme(scheme), host, port, username: user, password: pass };
+        }
+      }
+    }
   }
 
-  // Try user:pass@host:port
-  const authAtMatch = cleanLine.match(/^([^:@]+):([^@]+)@([^:]+):(\d+)$/);
-  if (authAtMatch) {
-    const port = parseInt(authAtMatch[4], 10);
-    if (!isValidPort(port)) return null;
-
-    return {
-      proxy_type: 'http',
-      host: authAtMatch[3],
-      port,
-      username: authAtMatch[1],
-      password: authAtMatch[2],
-    };
+  // 2. user:pass@host:port (no scheme)
+  const atIdx = cleanLine.lastIndexOf('@');
+  if (atIdx > 0) {
+    const authPart = cleanLine.slice(0, atIdx);
+    const hostPort = cleanLine.slice(atIdx + 1);
+    const lastColon = hostPort.lastIndexOf(':');
+    if (lastColon >= 0) {
+      const host = hostPort.slice(0, lastColon);
+      const port = parseInt(hostPort.slice(lastColon + 1), 10);
+      const colonIdx = authPart.indexOf(':');
+      if (host && isValidPort(port) && colonIdx >= 0) {
+        return {
+          proxy_type: 'http',
+          host,
+          port,
+          username: authPart.slice(0, colonIdx),
+          password: authPart.slice(colonIdx + 1),
+        };
+      }
+    }
   }
 
-  // Try host:port:user:pass
+  // 3. host:port:user:pass — split by : and check second element is a valid port
   const parts = cleanLine.split(':');
-  if (parts.length === 4) {
+  if (parts.length >= 4) {
     const port = parseInt(parts[1], 10);
     if (isValidPort(port)) {
       return {
@@ -76,22 +114,16 @@ function parseSingleProxy(line: string): ParsedProxy | null {
         host: parts[0],
         port,
         username: parts[2],
-        password: parts[3],
+        password: parts.slice(3).join(':'), // password may contain colons
       };
     }
   }
 
-  // Try host:port
+  // 4. host:port
   if (parts.length === 2) {
     const port = parseInt(parts[1], 10);
     if (isValidPort(port)) {
-      return {
-        proxy_type: 'http',
-        host: parts[0],
-        port,
-        username: null,
-        password: null,
-      };
+      return { proxy_type: 'http', host: parts[0], port, username: null, password: null };
     }
   }
 
