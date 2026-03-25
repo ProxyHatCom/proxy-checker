@@ -104,7 +104,24 @@ function parseSingleProxy(line: string): ParsedProxy | null {
     }
   }
 
-  // 3. host:port:user:pass — split by : and check second element is a valid port
+  // 3. Bracketed IPv6: [::1]:port or [::1]:port:user:pass
+  if (cleanLine.startsWith('[')) {
+    const bracketEnd = cleanLine.indexOf(']');
+    if (bracketEnd > 1 && cleanLine[bracketEnd + 1] === ':') {
+      const host = cleanLine.slice(1, bracketEnd);
+      const afterBracket = cleanLine.slice(bracketEnd + 2);
+      const colonParts = afterBracket.split(':');
+      const port = parseInt(colonParts[0], 10);
+      if (isValidPort(port)) {
+        if (colonParts.length >= 3) {
+          return { proxy_type: 'http', host, port, username: colonParts[1], password: colonParts.slice(2).join(':') };
+        }
+        return { proxy_type: 'http', host, port, username: null, password: null };
+      }
+    }
+  }
+
+  // 5. host:port:user:pass — split by : and check second element is a valid port
   const parts = cleanLine.split(':');
   if (parts.length >= 4) {
     const port = parseInt(parts[1], 10);
@@ -119,7 +136,7 @@ function parseSingleProxy(line: string): ParsedProxy | null {
     }
   }
 
-  // 4. host:port
+  // 6. host:port
   if (parts.length === 2) {
     const port = parseInt(parts[1], 10);
     if (isValidPort(port)) {

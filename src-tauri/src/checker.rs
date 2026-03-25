@@ -262,14 +262,14 @@ pub async fn check_single_proxy(
                 anonymity = determine_anonymity(&resp.headers);
 
                 // Use geo data from server, fallback to local DB
-                country = resp.country.or_else(|| {
+                if resp.country.is_none() || resp.city.is_none() {
                     let g = geo::lookup_ip(&resp.ip);
-                    g.country
-                });
-                city = resp.city.or_else(|| {
-                    let g = geo::lookup_ip(&resp.ip);
-                    g.city
-                });
+                    country = resp.country.or(g.country);
+                    city = resp.city.or(g.city);
+                } else {
+                    country = resp.country;
+                    city = resp.city;
+                }
             }
         }
     }

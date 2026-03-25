@@ -79,6 +79,9 @@ function App() {
       if (update) {
         await update.downloadAndInstall();
         await relaunch();
+      } else {
+        showToast('Already up to date');
+        setIsUpdating(false);
       }
     } catch (err) {
       showToast(`Update failed: ${err instanceof Error ? err.message : String(err)}`, 'error');
@@ -306,7 +309,7 @@ function App() {
       />
       {selectedIds.size > 0 && (
         <SelectionBar
-          count={selectedIds.size}
+          count={filteredProxies.filter(p => selectedIds.has(p.id)).length}
           total={filteredProxies.length}
           onSelectAll={handleSelectAll}
           onDeselectAll={handleDeselectAll}
@@ -320,7 +323,10 @@ function App() {
       <ProxyTable
         proxies={filteredProxies}
         onUpdate={store.updateProxy}
-        onRemove={store.removeProxy}
+        onRemove={(id: string) => {
+          store.removeProxy(id);
+          setSelectedIds(prev => { const n = new Set(prev); n.delete(id); return n; });
+        }}
         selectedIds={selectedIds}
         onToggleSelect={handleToggleSelect}
         onToggleAll={handleToggleAll}
