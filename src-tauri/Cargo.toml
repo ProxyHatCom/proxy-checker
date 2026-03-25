@@ -1,6 +1,6 @@
 [package]
 name = "proxychecker-app"
-version = "0.2.2"
+version = "0.3.0"
 description = "ProxyHat Checker — desktop proxy testing tool"
 authors = ["ProxyHat"]
 edition = "2021"
@@ -27,5 +27,6 @@ tokio = { version = "1", features = ["full"] }
 maxminddb = "0.24"
 chrono = { version = "0.4", features = ["serde"] }
 tauri-plugin-updater = "2"
+tauri-plugin-process = "2"
 urlencoding = "2"
 

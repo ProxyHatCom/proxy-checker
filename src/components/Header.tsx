@@ -3,9 +3,13 @@ import styles from './Header.module.css';
 
 interface HeaderProps {
   onSettingsClick: () => void;
+  version?: string;
+  updateAvailable?: { version: string; body?: string } | null;
+  isUpdating?: boolean;
+  onUpdate?: () => void;
 }
 
-export function Header({ onSettingsClick }: HeaderProps) {
+export function Header({ onSettingsClick, version, updateAvailable, isUpdating, onUpdate }: HeaderProps) {
   const { theme, toggleTheme } = useTheme();
 
   return (
@@ -18,8 +22,19 @@ export function Header({ onSettingsClick }: HeaderProps) {
         />
         <span className={styles.divider} />
         <span className={styles.title}>Checker</span>
+        {version && <span className={styles.version}>v{version}</span>}
       </div>
       <div className={styles.actions}>
+        {updateAvailable && (
+          <button
+            className={styles.updateBtn}
+            onClick={onUpdate}
+            disabled={isUpdating}
+            title={`Update to v${updateAvailable.version}`}
+          >
+            {isUpdating ? 'Updating...' : `Update v${updateAvailable.version}`}
+          </button>
+        )}
         <a
           href="https://proxyhat.com"
           target="_blank"

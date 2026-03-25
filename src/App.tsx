@@ -1,6 +1,9 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { listen } from '@tauri-apps/api/event';
+import { getVersion } from '@tauri-apps/api/app';
+import { check } from '@tauri-apps/plugin-updater';
+import { relaunch } from '@tauri-apps/plugin-process';
 import { Header } from './components/Header';
 import { ControlsBar } from './components/ControlsBar';
 import { ActionBar } from './components/ActionBar';
@@ -31,6 +34,9 @@ function App() {
   const [showPaste, setShowPaste] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+  const [appVersion, setAppVersion] = useState('');
+  const [updateAvailable, setUpdateAvailable] = useState<{ version: string; body?: string } | null>(null);
+  const [isUpdating, setIsUpdating] = useState(false);
   const [settings, setSettings] = useState<Settings>(() => {
     try {
       const saved = localStorage.getItem('proxychecker-settings');
@@ -53,6 +59,30 @@ function App() {
   const showToast = useCallback((message: string, type: 'success' | 'error' = 'success') => {
     setToast({ message, type });
   }, []);
+
+  // Get version and check for updates on startup
+  useEffect(() => {
+    getVersion().then(setAppVersion).catch(() => {});
+    check().then(update => {
+      if (update) {
+        setUpdateAvailable({ version: update.version, body: update.body ?? undefined });
+      }
+    }).catch(() => {});
+  }, []);
+
+  const handleUpdate = useCallback(async () => {
+    setIsUpdating(true);
+    try {
+      const update = await check();
+      if (update) {
+        await update.downloadAndInstall();
+        await relaunch();
+      }
+    } catch (err) {
+      showToast(`Update failed: ${err instanceof Error ? err.message : String(err)}`, 'error');
+      setIsUpdating(false);
+    }
+  }, [showToast]);
 
   // Listen for proxy results from Rust — attach once, use ref for callback
   const updateResultRef = useRef(store.updateResult);
@@ -165,7 +195,13 @@ function App() {
 
   return (
     <>
-      <Header onSettingsClick={() => setShowSettings(true)} />
+      <Header
+        onSettingsClick={() => setShowSettings(true)}
+        version={appVersion}
+        updateAvailable={updateAvailable}
+        isUpdating={isUpdating}
+        onUpdate={handleUpdate}
+      />
       <ControlsBar
         url={url}
         onUrlChange={setUrl}

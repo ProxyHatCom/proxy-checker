@@ -34,6 +34,35 @@
   letter-spacing: 0.3px;
 }
 
+.version {
+  font-size: 11px;
+  color: var(--text-muted);
+  font-weight: 400;
+  padding: 2px 6px;
+  background: var(--bg-hover);
+  border-radius: var(--radius-sm);
+}
+
+.updateBtn {
+  font-size: 12px;
+  padding: 5px 12px;
+  border-radius: var(--radius-sm);
+  background: var(--accent-blue);
+  color: white;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.updateBtn:hover:not(:disabled) {
+  filter: brightness(1.1);
+}
+
+.updateBtn:disabled {
+  opacity: 0.7;
+  cursor: default;
+}
+
 .actions {
   display: flex;
   align-items: center;
