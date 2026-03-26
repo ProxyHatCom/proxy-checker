@@ -3,7 +3,6 @@ import styles from './BulkPasteModal.module.css';
 import settingsStyles from './SettingsModal.module.css';
 
 interface Settings {
-  defaultUrl: string;
   defaultThreads: number;
   connectionTimeout: number;
   requestTimeout: number;
@@ -42,14 +41,6 @@ export function SettingsModal({ isOpen, onClose, settings, onSave }: SettingsMod
           </button>
         </div>
         <div className={styles.body}>
-          <div className={settingsStyles.group}>
-            <label>Default Destination URL</label>
-            <input
-              value={settings.defaultUrl}
-              onChange={e => handleChange('defaultUrl', e.target.value)}
-              spellCheck={false}
-            />
-          </div>
           <div className={settingsStyles.group}>
             <label>Default Threads</label>
             <input

@@ -11,13 +11,20 @@
 .left {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
+}
+
+.right {
+  display: flex;
+  align-items: center;
+  gap: 4px;
 }
 
 .count {
   font-size: 12px;
   font-weight: 600;
   color: var(--accent-blue);
+  white-space: nowrap;
 }
 
 .link {
@@ -27,16 +34,11 @@
   padding: 2px 6px;
   text-decoration: underline;
   cursor: pointer;
+  white-space: nowrap;
 }
 
 .link:hover {
   color: var(--accent-blue);
-}
-
-.actions {
-  display: flex;
-  align-items: center;
-  gap: 4px;
 }
 
 .typeSelect {
@@ -60,11 +62,17 @@
   color: var(--text-secondary);
   border: 1px solid var(--border-primary);
   border-radius: var(--radius-sm);
+  white-space: nowrap;
 }
 
-.actionBtn:hover {
+.actionBtn:hover:not(:disabled) {
   border-color: var(--accent-blue);
   color: var(--accent-blue);
+}
+
+.actionBtn:disabled {
+  opacity: 0.5;
+  cursor: default;
 }
 
 .deleteBtn {
@@ -74,6 +82,7 @@
   color: var(--text-secondary);
   border: 1px solid var(--border-primary);
   border-radius: var(--radius-sm);
+  white-space: nowrap;
 }
 
 .deleteBtn:hover {
@@ -86,6 +95,7 @@
   height: 18px;
   background: var(--border-primary);
   margin: 0 4px;
+  flex-shrink: 0;
 }
 
 .portInputWrap {

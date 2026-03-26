@@ -20,7 +20,6 @@ import { ProxyEntry, ProxyResult, ProxyType, CheckConfig } from './types/proxy';
 import './styles/global.css';
 
 const DEFAULT_SETTINGS: Settings = {
-  defaultUrl: 'https://www.google.com',
   defaultThreads: 10,
   connectionTimeout: 5,
   requestTimeout: 10,
@@ -28,7 +27,7 @@ const DEFAULT_SETTINGS: Settings = {
 
 function App() {
   const store = useProxyStore();
-  const [url, setUrl] = useState(DEFAULT_SETTINGS.defaultUrl);
+  const [url, setUrl] = useState('https://www.google.com');
   const [threads, setThreads] = useState(DEFAULT_SETTINGS.defaultThreads);
   const [isChecking, setIsChecking] = useState(false);
   const [filters, setFilters] = useState<FilterState>(defaultFilters);
