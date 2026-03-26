@@ -1,6 +1,6 @@
 [package]
 name = "proxychecker-app"
-version = "0.4.2"
+version = "0.4.3"
 description = "ProxyHat Checker — desktop proxy testing tool"
 authors = ["ProxyHat"]
 edition = "2021"
