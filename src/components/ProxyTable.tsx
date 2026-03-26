@@ -47,9 +47,9 @@ function formatSpeed(mbps: number | null | undefined): string {
 
 function AnonymityBadge({ level }: { level?: string }) {
   if (!level || level === 'unknown') return <span className={styles.anonUnknown}>--</span>;
-  if (level === 'elite') return <span className={styles.anonElite}>Elite</span>;
-  if (level === 'anonymous') return <span className={styles.anonAnon}>Anon</span>;
-  return <span className={styles.anonTransparent}>Transp</span>;
+  if (level === 'elite') return <span className={styles.anonElite} title="Your IP is hidden, proxy is undetectable">Elite</span>;
+  if (level === 'anonymous') return <span className={styles.anonAnon} title="Your IP is hidden, but proxy is detectable">Anonymous</span>;
+  return <span className={styles.anonTransparent} title="Your real IP is exposed through proxy headers">Transparent</span>;
 }
 
 function getSortValue(p: ProxyRow, key: SortKey): string | number {
