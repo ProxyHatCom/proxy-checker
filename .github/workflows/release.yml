@@ -59,7 +59,23 @@ jobs:
         with:
           tagName: v__VERSION__
           releaseName: 'ProxyHat Checker v__VERSION__'
-          releaseBody: 'Download the installer for your platform below.'
+          releaseBody: |
+            ## Download
+
+            | Platform | File | Notes |
+            |----------|------|-------|
+            | **Windows 10/11** | `ProxyHat-Checker_*_x64-setup.exe` | Recommended installer |
+            | **Windows (alt)** | `ProxyHat-Checker_*_x64_en-US.msi` | MSI installer |
+            | **macOS (Apple Silicon)** | `ProxyHat-Checker_*_aarch64.dmg` | M1/M2/M3/M4 Macs |
+            | **macOS (Intel)** | `ProxyHat-Checker_*_x64.dmg` | Older Intel Macs |
+            | **Linux (Debian/Ubuntu)** | `proxyhat-checker_*_amd64.deb` | `sudo dpkg -i file.deb` |
+            | **Linux (universal)** | `proxyhat-checker_*_amd64.AppImage` | Run directly, no install needed |
+
+            > Files ending in `.sig` are update signatures — you don't need to download them manually.
+
+            ---
+
+            [Telegram](https://t.me/ProxyHatCom) · [Website](https://proxyhat.com) · [Report a bug](https://github.com/ProxyHatCom/proxy-checker/issues/new)
           releaseDraft: true
           prerelease: false
           args: ${{ matrix.args }}
