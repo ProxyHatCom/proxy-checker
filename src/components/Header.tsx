@@ -5,7 +5,7 @@ import styles from './Header.module.css';
 interface HeaderProps {
   onSettingsClick: () => void;
   version?: string;
-  updateAvailable?: { version: string; body?: string } | null;
+  updateAvailable?: { version: string; body?: string; ready?: boolean } | null;
   isUpdating?: boolean;
   onUpdate?: () => void;
 }
@@ -34,12 +34,16 @@ export function Header({ onSettingsClick, version, updateAvailable, isUpdating, 
       <div className={styles.actions}>
         {updateAvailable && (
           <button
-            className={styles.updateBtn}
-            onClick={onUpdate}
+            className={updateAvailable.ready ? styles.updateBtnReady : styles.updateBtn}
+            onClick={updateAvailable.ready ? onUpdate : undefined}
             disabled={isUpdating}
-            title={`Update to v${updateAvailable.version}`}
+            title={updateAvailable.ready ? 'Click to restart and update' : `Downloading v${updateAvailable.version}...`}
           >
-            {isUpdating ? 'Updating...' : `Update v${updateAvailable.version}`}
+            {updateAvailable.ready
+              ? `Restart to update v${updateAvailable.version}`
+              : isUpdating
+                ? `Downloading v${updateAvailable.version}...`
+                : `Update v${updateAvailable.version}`}
           </button>
         )}
         <button className={styles.linkBtn} onClick={() => openExternal('https://proxyhat.com')} title="proxyhat.com">

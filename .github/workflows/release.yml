@@ -76,6 +76,6 @@ jobs:
             ---
 
             [Telegram](https://t.me/ProxyHatCom) · [Website](https://proxyhat.com) · [Report a bug](https://github.com/ProxyHatCom/proxy-checker/issues/new)
-          releaseDraft: true
+          releaseDraft: false
           prerelease: false
           args: ${{ matrix.args }}

@@ -35,7 +35,7 @@ function App() {
   const [showSettings, setShowSettings] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   const [appVersion, setAppVersion] = useState('');
-  const [updateAvailable, setUpdateAvailable] = useState<{ version: string; body?: string } | null>(null);
+  const [updateAvailable, setUpdateAvailable] = useState<{ version: string; body?: string; ready?: boolean } | null>(null);
   const [isUpdating, setIsUpdating] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [settings, setSettings] = useState<Settings>(() => {
@@ -61,32 +61,35 @@ function App() {
     setToast({ message, type });
   }, []);
 
-  // Get version and check for updates on startup
+  // Get version and check for updates on startup, then auto-download
   useEffect(() => {
     getVersion().then(setAppVersion).catch(() => {});
-    check().then(update => {
-      if (update) {
+
+    const autoUpdate = async () => {
+      try {
+        const update = await check();
+        if (!update) return;
+
         setUpdateAvailable({ version: update.version, body: update.body ?? undefined });
+        setIsUpdating(true);
+
+        await update.downloadAndInstall();
+        // Download complete — show restart prompt
+        setIsUpdating(false);
+        setUpdateAvailable(prev => prev ? { ...prev, ready: true } : null);
+      } catch {
+        setIsUpdating(false);
       }
-    }).catch(() => {});
+    };
+
+    // Check after short delay so UI loads first
+    const timer = setTimeout(autoUpdate, 2000);
+    return () => clearTimeout(timer);
   }, []);
 
   const handleUpdate = useCallback(async () => {
-    setIsUpdating(true);
-    try {
-      const update = await check();
-      if (update) {
-        await update.downloadAndInstall();
-        await relaunch();
-      } else {
-        showToast('Already up to date');
-        setIsUpdating(false);
-      }
-    } catch (err) {
-      showToast(`Update failed: ${err instanceof Error ? err.message : String(err)}`, 'error');
-      setIsUpdating(false);
-    }
-  }, [showToast]);
+    await relaunch();
+  }, []);
 
   // Listen for proxy results from Rust — attach once, use ref for callback
   const updateResultRef = useRef(store.updateResult);
