@@ -82,7 +82,7 @@ function parseSingleProxy(line: string): ParsedProxy | null {
     }
   }
 
-  // 2. user:pass@host:port (no scheme)
+  // 2. user:pass@host:port (no scheme — default socks5)
   const atIdx = cleanLine.lastIndexOf('@');
   if (atIdx > 0) {
     const authPart = cleanLine.slice(0, atIdx);
@@ -94,7 +94,7 @@ function parseSingleProxy(line: string): ParsedProxy | null {
       const colonIdx = authPart.indexOf(':');
       if (host && isValidPort(port) && colonIdx >= 0) {
         return {
-          proxy_type: 'http',
+          proxy_type: 'socks5',
           host,
           port,
           username: authPart.slice(0, colonIdx),
@@ -114,9 +114,9 @@ function parseSingleProxy(line: string): ParsedProxy | null {
       const port = parseInt(colonParts[0], 10);
       if (isValidPort(port)) {
         if (colonParts.length >= 3) {
-          return { proxy_type: 'http', host, port, username: colonParts[1], password: colonParts.slice(2).join(':') };
+          return { proxy_type: 'socks5', host, port, username: colonParts[1], password: colonParts.slice(2).join(':') };
         }
-        return { proxy_type: 'http', host, port, username: null, password: null };
+        return { proxy_type: 'socks5', host, port, username: null, password: null };
       }
     }
   }
@@ -127,7 +127,7 @@ function parseSingleProxy(line: string): ParsedProxy | null {
     const port = parseInt(parts[1], 10);
     if (isValidPort(port)) {
       return {
-        proxy_type: 'http',
+        proxy_type: 'socks5',
         host: parts[0],
         port,
         username: parts[2],
@@ -140,7 +140,7 @@ function parseSingleProxy(line: string): ParsedProxy | null {
   if (parts.length === 2) {
     const port = parseInt(parts[1], 10);
     if (isValidPort(port)) {
-      return { proxy_type: 'http', host: parts[0], port, username: null, password: null };
+      return { proxy_type: 'socks5', host: parts[0], port, username: null, password: null };
     }
   }
 

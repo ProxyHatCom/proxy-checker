@@ -6,7 +6,7 @@ let nextId = 1;
 export function createEmptyProxy(): ProxyRow {
   return {
     id: String(nextId++),
-    proxy_type: 'http' as ProxyType,
+    proxy_type: 'socks5' as ProxyType,
     host: '',
     port: 0,
     username: null,
